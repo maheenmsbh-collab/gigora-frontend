@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 const AuthContext = createContext(null);
 
@@ -7,47 +8,83 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    if (!mounted) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    const storedUser = window.localStorage.getItem('gigora-user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-    setLoading(false);
-
-    return () => {
-      mounted = false;
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // TODO: replace placeholder auth with Supabase when backend URL and API are available.
-  const login = async ({ email }) => {
-    const normalizedUser = { email };
-    setUser(normalizedUser);
-    window.localStorage.setItem('gigora-user', JSON.stringify(normalizedUser));
-    return { user: normalizedUser };
-  };
+  async function login(email, password) {
+    return await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+  }
 
-  const logout = async () => {
-    setUser(null);
-    window.localStorage.removeItem('gigora-user');
-  };
+  // async function signup(name, email, password) {
+  //   return await supabase.auth.signUp({
+  //     email,
+  //     password,
+  //     options: {
+  //       data: {
+  //         full_name: name,
+  //       },
+  //     },
+  //   });
+  // }
+  async function signup(name, email, password) {
+  const response = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name,
+      },
+    },
+  });
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
+  console.log("SUPABASE SIGNUP RESPONSE:", response);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return response;
+}
+
+  async function googleLogin() {
+    return await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+  }
+
+  async function logout() {
+    await supabase.auth.signOut();
+  }
+
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      signup,
+      googleLogin,
+      logout,
+    }),
+    [user, loading]
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 }

@@ -1,116 +1,294 @@
-import { useState } from 'react';
-import ResultCard from '../components/ResultCard';
-import Spinner from '../components/Spinner';
-import { generateProposal } from '../lib/api';
+import { useState } from "react";
+import ResultCard from "../components/ResultCard";
+import Spinner from "../components/Spinner";
+import { generateProposal } from "../lib/api";
+import { FiCopy, FiDownload } from "react-icons/fi";
 
 export default function ProposalGenerator() {
-  const [jobTitle, setJobTitle] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  const [skills, setSkills] = useState('');
-  const [status, setStatus] = useState('idle');
-  const [proposal, setProposal] = useState(null);
-  const [error, setError] = useState('');
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [skills, setSkills] = useState("");
+  const [tone, setTone] = useState("Professional");
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
+  const [status, setStatus] = useState("idle");
+  const [proposal, setProposal] = useState(null);
+  const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    setError("");
     setProposal(null);
 
-    if (!jobTitle.trim() || !jobDescription.trim()) {
-      setError('Please enter both a job title and description.');
+    if (
+      !jobTitle.trim() ||
+      !jobDescription.trim() ||
+      !skills.trim()
+    ) {
+      setError("Please complete all fields.");
       return;
     }
 
-    setStatus('loading');
+    setStatus("loading");
 
     try {
-      const response = await generateProposal({ jobTitle, jobDescription, skills });
+      const response = await generateProposal({
+        jobTitle,
+        jobDescription,
+        skills,
+        tone,
+      });
+
       setProposal(response);
     } catch {
-      setError('Unable to generate a proposal right now. Please try again later.');
+      setError("Unable to generate proposal.");
     } finally {
-      setStatus('idle');
+      setStatus("idle");
     }
-  };
+  }
+
+  async function copyProposal() {
+    if (!proposal) return;
+
+    await navigator.clipboard.writeText(proposal.proposal);
+
+    setCopied(true);
+
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function downloadProposal() {
+    if (!proposal) return;
+
+    const blob = new Blob([proposal.proposal], {
+      type: "text/plain",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+
+    link.download = "proposal.txt";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  const wordCount = proposal
+    ? proposal.proposal
+        .trim()
+        .split(/\s+/).length
+    : 0;
 
   return (
-    <div className="space-y-6 py-6 lg:py-6">
-      <section className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-md sm:p-6">
-        <div className="mb-4">
-          <p className="text-sm uppercase tracking-[0.3em] text-indigo-600 mb-1.5">Proposal Generator</p>
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl mb-1.5">Create professional proposals instantly</h1>
-          <p className="text-sm leading-6 text-slate-600">
-            Enter a job brief and the key skills you offer, then generate a polished proposal to share with clients.
+    <div className="space-y-8">
+
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
+
+        <div className="mb-8">
+
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">
+            Proposal Generator
           </p>
+
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">
+            AI Proposal Writer
+          </h1>
+
+          <p className="mt-2 text-slate-600">
+            Generate professional freelance proposals in seconds.
+          </p>
+
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="grid gap-6 lg:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">Job Title</span>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
+
+          <div className="grid gap-6 md:grid-cols-2">
+
+            <div>
+
+              <label className="mb-2 block text-sm font-medium">
+                Job Title
+              </label>
+
               <input
                 value={jobTitle}
-                onChange={(event) => setJobTitle(event.target.value)}
-                placeholder="e.g. Shopify Store Optimization"
-                className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                type="text"
-                aria-label="Job title"
-                required
+                onChange={(e) =>
+                  setJobTitle(e.target.value)
+                }
+                placeholder="Shopify Store Optimization"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
               />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-slate-700">Skills</span>
+
+              <p className="mt-1 text-xs text-slate-500">
+                {jobTitle.length}/80 characters
+              </p>
+
+            </div>
+
+            <div>
+
+              <label className="mb-2 block text-sm font-medium">
+                Skills
+              </label>
+
               <input
                 value={skills}
-                onChange={(event) => setSkills(event.target.value)}
-                placeholder="e.g. content strategy, SEO, landing pages"
-                className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                type="text"
-                aria-label="Skills"
+                onChange={(e) =>
+                  setSkills(e.target.value)
+                }
+                placeholder="React, SEO, Shopify"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
               />
-            </label>
+
+            </div>
+
           </div>
-          <label className="block">
-            <span className="text-sm font-medium text-slate-700">Job Description</span>
+
+          <div>
+
+            <label className="mb-2 block text-sm font-medium">
+              Tone
+            </label>
+
+            <select
+              value={tone}
+              onChange={(e) =>
+                setTone(e.target.value)
+              }
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+            >
+              <option>Professional</option>
+              <option>Friendly</option>
+              <option>Confident</option>
+              <option>Formal</option>
+            </select>
+
+          </div>
+
+          <div>
+
+            <label className="mb-2 block text-sm font-medium">
+              Job Description
+            </label>
+
             <textarea
+              rows={7}
               value={jobDescription}
-              onChange={(event) => setJobDescription(event.target.value)}
-              placeholder="Describe the project, deliverables, timeline, and expectations."
-              className="mt-3 min-h-[120px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              aria-label="Job description"
-              required
+              onChange={(e) =>
+                setJobDescription(e.target.value)
+              }
+              placeholder="Paste the client's project here..."
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
             />
-          </label>
+
+            <p className="mt-1 text-xs text-slate-500">
+              {jobDescription.length}/2000 characters
+            </p>
+
+          </div>
 
           {error && (
-            <div className="rounded-3xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert" aria-live="assertive">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
               {error}
             </div>
           )}
 
           <button
-            type="submit"
-            disabled={status === 'loading'}
-            className="w-full sm:w-auto inline-flex h-11 items-center justify-center rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={status === "loading"}
+            className="rounded-2xl bg-slate-900 px-7 py-3 font-semibold text-white hover:bg-slate-800"
           >
-            {status === 'loading' ? <Spinner label="Generating proposal" /> : 'Generate Proposal'}
+            {status === "loading"
+              ? <Spinner label="Generating Proposal..." />
+              : "Generate Proposal"}
           </button>
-        </form>
-      </section>
 
-      {proposal && (
-        <section className="grid gap-6">
-          <ResultCard title={proposal.title}>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-6 text-sm leading-7 text-slate-700">
-              {proposal.proposal.split('\n').map((line, index) => (
-                <p key={index} className={line === '' ? 'mt-4' : 'mt-4'}>
-                  {line}
-                </p>
-              ))}
-            </div>
-          </ResultCard>
+        </form>
+
+      </section>
+            {status === "loading" && (
+        <section className="rounded-3xl border border-slate-200 bg-white p-10 shadow-md">
+          <div className="flex flex-col items-center justify-center gap-5">
+            <Spinner label="AI is writing your proposal..." />
+            <p className="text-sm text-slate-500">
+              This usually takes a few seconds.
+            </p>
+          </div>
         </section>
       )}
+
+      {proposal && (
+        <ResultCard
+          title={proposal.title}
+          value={`${wordCount} words`}
+        >
+          <div className="flex flex-wrap gap-3">
+
+            <button
+              onClick={copyProposal}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              <FiCopy />
+              {copied ? "Copied!" : "Copy Proposal"}
+            </button>
+
+            <button
+              onClick={downloadProposal}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"
+            >
+              <FiDownload />
+              Download TXT
+            </button>
+
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+
+            {proposal.proposal.split("\n").map((line, index) => (
+              <p
+                key={index}
+                className="mb-4 whitespace-pre-wrap leading-7 text-slate-700"
+              >
+                {line}
+              </p>
+            ))}
+
+          </div>
+        </ResultCard>
+      )}
+
+      {!proposal &&
+        status === "idle" &&
+        !error && (
+          <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+
+            <div className="mx-auto max-w-md">
+
+              <div className="mb-5 text-6xl">
+                ✍️
+              </div>
+
+              <h2 className="text-2xl font-semibold text-slate-800">
+                No Proposal Generated Yet
+              </h2>
+
+              <p className="mt-3 text-slate-500">
+                Fill in the project information above and let AI
+                generate a professional proposal for you.
+              </p>
+
+            </div>
+
+          </section>
+        )}
+
     </div>
   );
 }

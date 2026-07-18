@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { NavLink, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { NavLink, Routes, Route, Navigate, Link, useNavigate } from 'react-router-dom';
 import { FiMenu, FiX, FiSearch, FiShield, FiBarChart2, FiFileText, FiLogOut, FiTrendingUp } from 'react-icons/fi';
 import ProfileAnalyzer from './ProfileAnalyzer';
 import GigSEO from './GigSEO';
 import ProposalGenerator from './ProposalGenerator';
+import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { name: 'Dashboard', icon: FiBarChart2, to: '/dashboard' },
@@ -94,6 +95,13 @@ function DashboardOverview() {
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -143,6 +151,7 @@ export default function Dashboard() {
             <div className="mt-auto pt-6">
               <button
                 type="button"
+                onClick={handleLogout}
                 className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/10"
               >
                 <FiLogOut className="h-5 w-5" />
