@@ -8,7 +8,7 @@ export default function StatsCard({
   const Icon = icon;
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-slate-500">

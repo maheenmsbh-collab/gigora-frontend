@@ -1,456 +1,258 @@
-// import { useState } from 'react';
-// import ResultCard from '../components/ResultCard';
-// import Spinner from '../components/Spinner';
-// import { suggestGigSEO } from '../lib/api';
-
-// export default function GigSEO() {
-//   const [gigTitle, setGigTitle] = useState('');
-//   const [gigDescription, setGigDescription] = useState('');
-//   const [keywords, setKeywords] = useState('');
-//   const [status, setStatus] = useState('idle');
-//   const [suggestions, setSuggestions] = useState(null);
-//   const [error, setError] = useState('');
-
-//   const handleSubmit = async (event) => {
-//     event.preventDefault();
-//     setError('');
-//     setSuggestions(null);
-
-//     if (!gigTitle.trim() || !gigDescription.trim()) {
-//       setError('Please enter both a gig title and description.');
-//       return;
-//     }
-
-//     setStatus('loading');
-
-//     try {
-//       const response = await suggestGigSEO({ gigTitle, gigDescription, keywords });
-//       setSuggestions(response);
-//     } catch {
-//       setError('Unable to generate SEO suggestions right now. Please try again later.');
-//     } finally {
-//       setStatus('idle');
-//     }
-//   };
-
-//   return (
-//     <div className="space-y-6 py-6 lg:py-5">
-//       <section className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-md sm:p-6">
-//         <div className="mb-4">
-//           <p className="text-sm uppercase tracking-[0.3em] text-indigo-600 mb-2 ">Gig SEO</p>
-//           <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">Generate high-impact SEO suggestions</h1>
-//           <p className="text-sm leading-6 text-slate-600">
-//             Optimize your gig listing for search visibility with keyword suggestions and stronger positioning.
-//           </p>
-//         </div>
-
-//         <form className="space-y-6" onSubmit={handleSubmit}>
-//           <div className="grid gap-6 lg:grid-cols-2">
-//             <label className="block">
-//               <span className="text-sm font-medium text-slate-700">Gig Title</span>
-//               <input
-//                 value={gigTitle}
-//                 onChange={(event) => setGigTitle(event.target.value)}
-//                 placeholder="e.g. I will design a high-converting landing page"
-//                 className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-//                 type="text"
-//                 aria-label="Gig title"
-//                 required
-//               />
-//             </label>
-//             <label className="block">
-//               <span className="text-sm font-medium text-slate-700">Keywords</span>
-//               <input
-//                 value={keywords}
-//                 onChange={(event) => setKeywords(event.target.value)}
-//                 placeholder="e.g. landing page, conversion, web design"
-//                 className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-//                 type="text"
-//                 aria-label="Keywords"
-//               />
-//             </label>
-//           </div>
-//           <label className="block">
-//             <span className="text-sm font-medium text-slate-700">Gig Description</span>
-//             <textarea
-//               value={gigDescription}
-//               onChange={(event) => setGigDescription(event.target.value)}
-//               placeholder="Enter the details of what you offer and the value you deliver."
-//               className="mt-3 min-h-[120px] w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-//               aria-label="Gig description"
-//               required
-//             />
-//           </label>
-
-//           {error && (
-//             <div className="rounded-3xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert" aria-live="assertive">
-//               {error}
-//             </div>
-//           )}
-
-//           <button
-//             type="submit"
-//             disabled={status === 'loading'}
-//             className="inline-flex h-12 items-center justify-center rounded-3xl bg-slate-950 px-6 text-sm font-semibold text-white transition duration-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
-//           >
-//             {status === 'loading' ? <Spinner label="Generating suggestions" /> : 'Generate SEO Suggestions'}
-//           </button>
-//         </form>
-//       </section>
-
-//       {suggestions && (
-//         <section className="grid gap-6 lg:grid-cols-2">
-//           <ResultCard title="Optimized headline" value="SEO ready">
-//             <p className="text-slate-700">{suggestions.headline}</p>
-//           </ResultCard>
-
-//           <ResultCard title="SEO suggestions">
-//             <ol className="space-y-3 text-slate-700">
-//               {suggestions.suggestions.map((suggestion) => (
-//                 <li key={suggestion} className="list-decimal pl-4">
-//                   {suggestion}
-//                 </li>
-//               ))}
-//             </ol>
-//           </ResultCard>
-//         </section>
-//       )}
-//     </div>
-//   );
-// }
 import { useState } from "react";
-
 import ResultCard from "../components/ResultCard";
-import LoadingCard from "../components/seo/LoadingCard";
-import SEOScoreCard from "../components/seo/SEOScoreCard";
-import CharacterCounter from "../components/seo/CharacterCounter";
-import KeywordChip from "../components/seo/KeywordChip";
-import CopyButton from "../components/seo/CopyButton";
+import Spinner from "../components/Spinner";
+import { generateProposal } from "../lib/api";
+import { FiCopy, FiDownload } from "react-icons/fi";
+import { showSuccess, showError } from "../lib/toast";
 
-import { suggestGigSEO } from "../lib/api";
-
-export default function GigSEO() {
-  const [gigTitle, setGigTitle] = useState("");
-  const [gigDescription, setGigDescription] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [category, setCategory] = useState("");
+export default function ProposalGenerator() {
+  const [jobTitle, setJobTitle] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [skills, setSkills] = useState("");
+  const [tone, setTone] = useState("Professional");
 
   const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
+  const [proposal, setProposal] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  const [result, setResult] = useState(null);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+    setProposal(null);
 
-    setError("");
-    setResult(null);
-
-    if (
-      !gigTitle.trim() ||
-      !gigDescription.trim() ||
-      !keywords.trim() ||
-      !category
-    ) {
-      setError("Please fill in every field.");
+    if (!jobTitle.trim() || !jobDescription.trim()) {
+      showError("Please enter both a job title and description.");
       return;
     }
 
     setStatus("loading");
 
     try {
-      const response = await suggestGigSEO({
-        gigTitle,
-        gigDescription,
-        keywords,
-        category,
+      const response = await generateProposal({
+        jobTitle,
+        jobDescription,
+        skills,
+        tone,
       });
 
-      setResult(response);
-    } catch (err) {
-      setError("Unable to generate SEO suggestions.");
+      setProposal(response);
+      showSuccess("Proposal generated successfully!");
+    } catch {
+      showError("Unable to generate a proposal right now.");
     } finally {
       setStatus("idle");
     }
+  };
+
+  async function copyProposal() {
+    if (!proposal) return;
+
+    try {
+      await navigator.clipboard.writeText(proposal.proposal);
+
+      setCopied(true);
+      showSuccess("Proposal copied to clipboard!");
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+    } catch {
+      showError("Unable to copy proposal.");
+    }
   }
+
+  function downloadProposal() {
+    if (!proposal) return;
+
+    const blob = new Blob([proposal.proposal], {
+      type: "text/plain",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "proposal.txt";
+
+    link.click();
+
+    URL.revokeObjectURL(url);
+
+    showSuccess("Proposal downloaded!");
+  }
+
+  const wordCount = proposal
+    ? proposal.proposal.trim().split(/\s+/).length
+    : 0;
 
   return (
     <div className="space-y-8">
-
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
-
         <div className="mb-8">
-
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">
-            Gig SEO
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">
+            Proposal Generator
           </p>
 
-          <h1 className="text-3xl font-bold text-slate-900">
-            AI Gig SEO Optimizer
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">
+            AI Proposal Writer
           </h1>
 
           <p className="mt-2 text-slate-600">
-            Improve your Fiverr or Upwork gig with AI-powered SEO suggestions.
+            Generate professional freelance proposals in seconds.
           </p>
-
         </div>
 
         <form
           onSubmit={handleSubmit}
           className="space-y-6"
         >
-
-          <div>
-
-            <label className="mb-2 block text-sm font-medium">
-              Gig Title
-            </label>
-
-            <input
-              type="text"
-              value={gigTitle}
-              onChange={(e) => setGigTitle(e.target.value)}
-              placeholder="I will design a professional website"
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-            />
-
-            <CharacterCounter
-              current={gigTitle.length}
-              max={80}
-            />
-
-          </div>
-
-          <div>
-
-            <label className="mb-2 block text-sm font-medium">
-              Gig Description
-            </label>
-
-            <textarea
-              rows={6}
-              value={gigDescription}
-              onChange={(e) =>
-                setGigDescription(e.target.value)
-              }
-              placeholder="Describe your service..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-            />
-
-            <CharacterCounter
-              current={gigDescription.length}
-              max={1200}
-            />
-
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-2">
-
+          <div className="grid gap-6 md:grid-cols-2">
             <div>
-
               <label className="mb-2 block text-sm font-medium">
-                Keywords
+                Job Title
               </label>
 
               <input
-                type="text"
-                value={keywords}
-                onChange={(e) => setKeywords(e.target.value)}
-                placeholder="react, frontend, website"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="Shopify Store Optimization"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
               />
 
+              <p className="mt-1 text-xs text-slate-500">
+                {jobTitle.length}/80 characters
+              </p>
             </div>
 
             <div>
-
               <label className="mb-2 block text-sm font-medium">
-                Category
+                Skills
               </label>
 
-              <select
-                value={category}
-                onChange={(e) =>
-                  setCategory(e.target.value)
-                }
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-              >
-
-                <option value="">
-                  Select category
-                </option>
-
-                <option>Web Development</option>
-
-                <option>Graphic Design</option>
-
-                <option>Digital Marketing</option>
-
-                <option>Writing</option>
-
-                <option>Video Editing</option>
-
-                <option>AI Services</option>
-
-              </select>
-
+              <input
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                placeholder="React, SEO, Shopify"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+              />
             </div>
-
           </div>
 
-          {error && (
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Tone
+            </label>
 
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
-              {error}
-            </div>
+            <select
+              value={tone}
+              onChange={(e) => setTone(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+            >
+              <option>Professional</option>
+              <option>Friendly</option>
+              <option>Confident</option>
+              <option>Formal</option>
+            </select>
+          </div>
 
-          )}
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Job Description
+            </label>
+
+            <textarea
+              rows={7}
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste the client's project here..."
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+            />
+
+            <p className="mt-1 text-xs text-slate-500">
+              {jobDescription.length}/2000 characters
+            </p>
+          </div>
 
           <button
             type="submit"
             disabled={status === "loading"}
-            className="rounded-2xl bg-slate-900 px-7 py-3 font-semibold text-white transition hover:bg-slate-800"
+            className="rounded-2xl bg-slate-900 px-7 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-70"
           >
-            Generate SEO Suggestions
+            {status === "loading"
+              ? <Spinner label="Generating Proposal..." />
+              : "Generate Proposal"}
           </button>
-
         </form>
-
       </section>
+            {status === "loading" && (
+        <section className="rounded-3xl border border-slate-200 bg-white p-10 shadow-md">
+          <div className="flex flex-col items-center justify-center gap-5">
+            <Spinner label="AI is writing your proposal..." />
 
-      {status === "loading" && <LoadingCard />}
-      {result && (
-        <div className="grid gap-6 lg:grid-cols-2">
+            <p className="text-sm text-slate-500">
+              This usually takes a few seconds.
+            </p>
+          </div>
+        </section>
+      )}
 
-          <SEOScoreCard score={result.seoScore} />
+      {proposal && (
+        <ResultCard
+          title={proposal.title}
+          value={`${wordCount} words`}
+        >
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={copyProposal}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+            >
+              <FiCopy />
+              {copied ? "Copied!" : "Copy Proposal"}
+            </button>
 
-          <ResultCard title="Optimized Gig Title">
+            <button
+              type="button"
+              onClick={downloadProposal}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium transition hover:bg-slate-50"
+            >
+              <FiDownload />
+              Download TXT
+            </button>
+          </div>
 
-            <div className="space-y-4">
-
-              <p className="rounded-2xl bg-slate-50 p-4 text-slate-700">
-                {result.optimizedTitle}
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            {proposal.proposal.split("\n").map((line, index) => (
+              <p
+                key={index}
+                className="mb-4 whitespace-pre-wrap leading-7 text-slate-700"
+              >
+                {line}
               </p>
-
-              <CopyButton text={result.optimizedTitle} />
-
-            </div>
-
-          </ResultCard>
-
-          <ResultCard title="Suggested Keywords">
-
-            <div className="flex flex-wrap gap-3">
-
-              {result.keywords.map((keyword) => (
-                <KeywordChip
-                  key={keyword}
-                  keyword={keyword}
-                />
-              ))}
-
-            </div>
-
-          </ResultCard>
-
-          <ResultCard title="Strengths">
-
-            <ul className="space-y-3">
-
-              {result.strengths.map((item) => (
-                <li
-                  key={item}
-                  className="flex gap-3"
-                >
-                  <span className="text-emerald-600 font-bold">
-                    ✓
-                  </span>
-
-                  <span>{item}</span>
-
-                </li>
-              ))}
-
-            </ul>
-
-          </ResultCard>
-
-          <ResultCard title="Areas to Improve">
-
-            <ul className="space-y-3">
-
-              {result.weaknesses.map((item) => (
-                <li
-                  key={item}
-                  className="flex gap-3"
-                >
-                  <span className="text-red-500 font-bold">
-                    •
-                  </span>
-
-                  <span>{item}</span>
-
-                </li>
-              ))}
-
-            </ul>
-
-          </ResultCard>
-
-          <ResultCard
-            title="AI SEO Recommendations"
-            className="lg:col-span-2"
-          >
-
-            <div className="space-y-5">
-
-              <ol className="space-y-3">
-
-                {result.suggestions.map((item, index) => (
-                  <li
-                    key={item}
-                    className="flex gap-4 rounded-2xl bg-slate-50 p-4"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white font-semibold">
-                      {index + 1}
-                    </span>
-
-                    <span className="text-slate-700">
-                      {item}
-                    </span>
-
-                  </li>
-                ))}
-
-              </ol>
-
-              <CopyButton
-                text={result.suggestions.join("\n")}
-              />
-
-            </div>
-
-          </ResultCard>
-
-        </div>
+            ))}
+          </div>
+        </ResultCard>
       )}
 
-      {!result && status === "idle" && !error && (
+      {!proposal && status === "idle" && (
+        <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
+          <div className="mx-auto max-w-md">
+            <div className="mb-5 text-6xl">
+              ✍️
+            </div>
 
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+            <h2 className="text-2xl font-semibold text-slate-800">
+              No Proposal Generated Yet
+            </h2>
 
-          <h2 className="text-xl font-semibold text-slate-800">
-            No Analysis Yet
-          </h2>
-
-          <p className="mt-3 text-slate-500">
-            Fill in the form above and generate AI SEO suggestions.
-          </p>
-
-        </div>
-
+            <p className="mt-3 text-slate-500">
+              Fill in the project information above and let AI generate a
+              professional proposal for you.
+            </p>
+          </div>
+        </section>
       )}
-
     </div>
   );
 }

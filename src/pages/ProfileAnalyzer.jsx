@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ResultCard from '../components/ResultCard';
 import Spinner from '../components/Spinner';
 import { analyzeProfile } from '../lib/api';
+import { showSuccess, showError } from "../lib/toast";
 
 const experienceOptions = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const platformOptions = ['Fiverr', 'Upwork', 'Freelancer'];
@@ -13,29 +14,37 @@ export default function ProfileAnalyzer() {
   const [platform, setPlatform] = useState('Fiverr');
   const [status, setStatus] = useState('idle');
   const [results, setResults] = useState(null);
-  const [error, setError] = useState('');
+  // const [error, setError] = useState('');
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    if (!profileUrl.trim() || !skills.trim()) {
-      setError('Profile URL and skills are required to proceed.');
-      return;
-    }
+  if (!profileUrl.trim() || !skills.trim()) {
+    showError("Profile URL and skills are required.");
+    return;
+  }
 
-    setStatus('loading');
-    setResults(null);
+  setStatus("loading");
+  setResults(null);
 
-    try {
-      const analysis = await analyzeProfile({ profileUrl, skills, experience, platform });
-      setResults(analysis);
-    } catch {
-      setError('Unable to analyze your profile at this time. Please try again later.');
-    } finally {
-      setStatus('idle');
-    }
-  };
+  try {
+    const analysis = await analyzeProfile({
+      profileUrl,
+      skills,
+      experience,
+      platform,
+    });
+
+    setResults(analysis);
+    showSuccess("Profile analyzed successfully!");
+  } catch {
+    showError(
+      "Unable to analyze your profile at this time. Please try again later."
+    );
+  } finally {
+    setStatus("idle");
+  }
+};
 
   return (
     <div className="space-y-6 py-6 lg:py-6">
@@ -109,11 +118,7 @@ export default function ProfileAnalyzer() {
             </label>
           </div>
 
-          {error && (
-            <div className="rounded-3xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert" aria-live="assertive">
-              {error}
-            </div>
-          )}
+        
 
           <button
             type="submit"

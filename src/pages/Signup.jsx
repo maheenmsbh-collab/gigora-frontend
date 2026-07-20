@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { showSuccess, showError } from "../lib/toast";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -13,8 +14,6 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const submittingRef = useRef(false);
 
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
 
   const normalizeEmail = (value) =>
     value.trim().replace(/^"|"$/g, "").toLowerCase();
@@ -25,13 +24,12 @@ export default function Signup() {
   const handleSignup = async (event) => {
     event.preventDefault();
 
-    setMessage("");
-    setError("");
+  
 
     if (loading || submittingRef.current) return;
 
     if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please enter your name, email, and password.");
+      showError("Please enter your name, email, and password.");
       return;
     }
 
@@ -42,7 +40,7 @@ console.log("JSON:", JSON.stringify(normalizedEmail));
 console.log("Length:", normalizedEmail.length);
 
     if (!isValidEmail(normalizedEmail)) {
-      setError("Please enter a valid email address.");
+      showError("Please enter a valid email address.");
       return;
     }
 
@@ -57,6 +55,8 @@ console.log("Length:", normalizedEmail.length);
       // );
 
       // if (error) throw error;
+      console.log(normalizedEmail);
+console.log(JSON.stringify(normalizedEmail));
       const result = await signup(
   name,
   normalizedEmail,
@@ -69,7 +69,7 @@ if (result.error) {
   throw result.error;
 }
 
-      setMessage(
+      showSuccess(
         "Account created successfully! Please check your email to verify your account."
       );
 
@@ -77,8 +77,8 @@ if (result.error) {
         navigate("/login");
       }, 2000);
     } catch (err) {
-      setError(err.message);
-    } finally {
+    showError(err.message || "Signup failed.");
+}finally {
       setLoading(false);
       submittingRef.current = false;
     }
@@ -174,26 +174,7 @@ if (result.error) {
             </button>
                       </form>
 
-          {message && (
-            <div
-              className="mt-6 rounded-3xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-              role="status"
-              aria-live="polite"
-            >
-              {message}
-            </div>
-          )}
-
-          {error && (
-            <div
-              className="mt-6 rounded-3xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </div>
-          )}
-
+        
           <p className="mt-8 text-center text-sm text-slate-500">
             Already have an account?{" "}
             <Link

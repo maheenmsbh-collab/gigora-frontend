@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { useAuth } from "../contexts/AuthContext";
+import { showSuccess, showError } from "../lib/toast";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,8 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  
 
   const normalizeEmail = (value) =>
     value.trim().replace(/^"|"$/g, "").toLowerCase();
@@ -23,20 +23,18 @@ export default function Login() {
   const handleEmailLogin = async (event) => {
     event.preventDefault();
 
-    setMessage("");
-    setError("");
-
+    
     if (loading) return;
 
     if (!email.trim() || !password.trim()) {
-      setError("Please enter both email and password.");
+      showError("Please enter both email and password.");
       return;
     }
 
     const normalizedEmail = normalizeEmail(email);
 
     if (!isValidEmail(normalizedEmail)) {
-      setError("Please enter a valid email address.");
+      showError("Please enter a valid email address.");
       return;
     }
 
@@ -49,34 +47,30 @@ export default function Login() {
       );
 
       if (error) throw error;
+showSuccess("Login successful!");
 
-      setMessage(
-        "Login successful! Redirecting to your dashboard..."
-      );
-
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1200);
+setTimeout(() => {
+  navigate("/dashboard");
+}, 1000);
     } catch (err) {
-      setError(err.message);
-    } finally {
+  showError(err.message || "Login failed.");
+} finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setMessage("");
-    setError("");
+    
 
     try {
       const { error } = await googleLogin();
 
       if (error) throw error;
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
+  showError(err.message || "Google login failed.");
+  setLoading(false);
+}
   };
 
   return (
@@ -169,25 +163,9 @@ export default function Login() {
             </button>
                       </form>
 
-          {message && (
-            <div
-              className="mt-6 rounded-3xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
-              role="status"
-              aria-live="polite"
-            >
-              {message}
-            </div>
-          )}
+        
 
-          {error && (
-            <div
-              className="mt-6 rounded-3xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700"
-              role="alert"
-              aria-live="assertive"
-            >
-              {error}
-            </div>
-          )}
+      
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Don&apos;t have an account?{" "}

@@ -3,6 +3,7 @@ import ResultCard from "../components/ResultCard";
 import Spinner from "../components/Spinner";
 import { generateProposal } from "../lib/api";
 import { FiCopy, FiDownload } from "react-icons/fi";
+import { showSuccess, showError } from "../lib/toast";
 
 export default function ProposalGenerator() {
   const [jobTitle, setJobTitle] = useState("");
@@ -12,42 +13,39 @@ export default function ProposalGenerator() {
 
   const [status, setStatus] = useState("idle");
   const [proposal, setProposal] = useState(null);
-  const [error, setError] = useState("");
+
   const [copied, setCopied] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    setError("");
-    setProposal(null);
+  setProposal(null);
 
-    if (
-      !jobTitle.trim() ||
-      !jobDescription.trim() ||
-      !skills.trim()
-    ) {
-      setError("Please complete all fields.");
-      return;
-    }
-
-    setStatus("loading");
-
-    try {
-      const response = await generateProposal({
-        jobTitle,
-        jobDescription,
-        skills,
-        tone,
-      });
-
-      setProposal(response);
-    } catch {
-      setError("Unable to generate proposal.");
-    } finally {
-      setStatus("idle");
-    }
+  if (!jobTitle.trim() || !jobDescription.trim()) {
+    showError("Please enter both a job title and description.");
+    return;
   }
 
+  setStatus("loading");
+
+  try {
+    const response = await generateProposal({
+      jobTitle,
+      jobDescription,
+      skills,
+    });
+
+    setProposal(response);
+
+    showSuccess("Proposal generated successfully!");
+  } catch {
+    showError(
+      "Unable to generate a proposal right now."
+    );
+  } finally {
+    setStatus("idle");
+  }
+};
   async function copyProposal() {
     if (!proposal) return;
 
@@ -195,11 +193,7 @@ export default function ProposalGenerator() {
 
           </div>
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
-              {error}
-            </div>
-          )}
+       
 
           <button
             disabled={status === "loading"}
@@ -266,7 +260,7 @@ export default function ProposalGenerator() {
 
       {!proposal &&
         status === "idle" &&
-        !error && (
+       (
           <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
 
             <div className="mx-auto max-w-md">
