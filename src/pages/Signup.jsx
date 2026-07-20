@@ -34,13 +34,19 @@ export default function Signup() {
     }
 
     const normalizedEmail = normalizeEmail(email);
-    console.log("Original:", email);
-console.log("Normalized:", normalizedEmail);
-console.log("JSON:", JSON.stringify(normalizedEmail));
-console.log("Length:", normalizedEmail.length);
 
     if (!isValidEmail(normalizedEmail)) {
       showError("Please enter a valid email address.");
+      return;
+    }
+
+    if (name.trim().length < 2 || name.trim().length > 80) {
+      showError("Your name must be between 2 and 80 characters.");
+      return;
+    }
+
+    if (password.length < 6) {
+      showError("Password must be at least 6 characters long.");
       return;
     }
 
@@ -48,22 +54,11 @@ console.log("Length:", normalizedEmail.length);
     submittingRef.current = true;
 
     try {
-      // const { error } = await signup(
-      //   name,
-      //   normalizedEmail,
-      //   password
-      // );
-
-      // if (error) throw error;
-      console.log(normalizedEmail);
-console.log(JSON.stringify(normalizedEmail));
       const result = await signup(
-  name,
-  normalizedEmail,
-  password
-);
-
-console.log(result);
+        name.trim(),
+        normalizedEmail,
+        password
+      );
 
 if (result.error) {
   throw result.error;

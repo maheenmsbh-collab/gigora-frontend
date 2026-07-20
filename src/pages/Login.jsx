@@ -38,6 +38,11 @@ export default function Login() {
       return;
     }
 
+    if (password.length < 6) {
+      showError("Password must be at least 6 characters long.");
+      return;
+    }
+
     setLoading(true);
 
     try {

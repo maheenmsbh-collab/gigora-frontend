@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import App from './App';
 
 // Mock AuthContext to avoid real async auth calls during tests
 jest.mock('./contexts/AuthContext', () => ({
@@ -6,8 +7,6 @@ jest.mock('./contexts/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
   useAuth: () => ({ user: null, loading: false }),
 }));
-
-import App from './App';
 
 test('renders login page', async () => {
   render(<App />);

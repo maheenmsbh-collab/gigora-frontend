@@ -3,13 +3,14 @@ import ProfileCard from "../components/ProfileCard";
 import { useAuth } from "../contexts/AuthContext";
 import useProfile from "../hooks/useProfile";
 import { showError, showSuccess } from "../lib/toast";
+import { getUserDisplayName } from "../lib/getCurrentUser";
 
 const formatDate = (date) => date ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(date)) : "Not available";
 
 export default function Profile() {
   const { user } = useAuth();
   const { fullName, setFullName, isSaving, saveName, sendPasswordReset } = useProfile(user);
-  const displayName = fullName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const displayName = fullName || getUserDisplayName(user);
   const provider = user?.app_metadata?.provider || "email";
   const initials = displayName.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 

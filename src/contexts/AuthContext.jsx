@@ -29,39 +29,10 @@ export function AuthProvider({ children }) {
     });
   }
 
-  // async function signup(name, email, password) {
-  //   return await supabase.auth.signUp({
-  //     email,
-  //     password,
-  //     options: {
-  //       data: {
-  //         full_name: name,
-  //       },
-  //     },
-  //   });
-  // }
-//   async function signup(name, email, password) {
-//   const response = await supabase.auth.signUp({
-//     email,
-//     password,
-//     options: {
-//       data: {
-//         full_name: name,
-//       },
-//     },
-//   });
-
-//   console.log("SUPABASE SIGNUP RESPONSE:", response);
-
-//   return response;
-// }
 async function signup(name, email, password) {
-  console.log("EMAIL:", email);
-  console.log("EMAIL JSON:", JSON.stringify(email));
-
-  const response = await supabase.auth.signUp({
-    email: email,
-    password: password,
+  return await supabase.auth.signUp({
+    email,
+    password,
     options: {
       data: {
         full_name: name,
@@ -69,9 +40,6 @@ async function signup(name, email, password) {
     },
   });
 
-  console.log(response);
-
-  return response;
 }
 
   async function googleLogin() {

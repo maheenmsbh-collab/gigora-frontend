@@ -10,9 +10,13 @@ import ProposalGenerator from "./ProposalGenerator";
 import AIChat from "./AIChat";
 import Profile from "./Profile";
 import History from "./History";
+import Settings from "./Settings";
+import Help from "./Help";
+import About from "./About";
 import { useAuth } from "../contexts/AuthContext";
 import StatsCard from "../components/dashboard/StatsCard";
 import { showSuccess } from "../lib/toast";
+import { getUserDisplayName } from "../lib/getCurrentUser";
 
 const navItems = [
   { name: "Dashboard", icon: FiBarChart2, to: "/dashboard" },
@@ -22,6 +26,8 @@ const navItems = [
   { name: "AI Assistant", icon: FiMessageCircle, to: "/dashboard/ai-assistant" },
   { name: "History", icon: FiArchive, to: "/dashboard/history" },
   { name: "Profile", icon: FiUsers, to: "/dashboard/profile" },
+  { name: "Settings", icon: FiMenu, to: "/dashboard/settings" },
+  { name: "Help", icon: FiSearch, to: "/dashboard/help" },
 ];
 
 const featureCards = [
@@ -38,7 +44,7 @@ const recentActivities = [
 
 function DashboardOverview() {
   const { user } = useAuth();
-  const greetingName = user?.user_metadata?.full_name || user?.email?.split("@")[0];
+  const greetingName = getUserDisplayName(user);
   const quickActions = [
     { label: "Generate Proposal", to: "/dashboard/proposal-generator", icon: FiFileText, color: "bg-orange-50 hover:bg-orange-100 text-orange-700" },
     { label: "Analyze Profile", to: "/dashboard/profile-analyzer", icon: FiShield, color: "bg-indigo-50 hover:bg-indigo-100 text-indigo-700" },
@@ -54,7 +60,7 @@ function DashboardOverview() {
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.3em] text-indigo-600">Dashboard Overview</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900 sm:text-4xl">
-              {greetingName ? `Good Morning, ${greetingName} 👋` : "Welcome back!"}
+              {`Good Morning, ${greetingName} 👋`}
             </h1>
             <p className="mt-4 leading-7 text-slate-600">Track your freelance growth, analyze profiles, optimize gigs and generate winning proposals — all from one workspace.</p>
           </div>
@@ -121,7 +127,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const displayName = getUserDisplayName(user);
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
   const handleLogout = async () => {
@@ -145,7 +151,7 @@ export default function Dashboard() {
         </aside>
         <div className="flex flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-100/90 backdrop-blur"><div className="flex flex-col gap-4 p-4 sm:px-6"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow lg:hidden" onClick={() => setSidebarOpen(!sidebarOpen)}>{sidebarOpen ? <FiX /> : <FiMenu />}</button><h2 className="text-xl font-semibold">Dashboard</h2></div><div className="flex items-center gap-3"><div className="hidden rounded-xl bg-white px-4 py-2 shadow md:block">{displayName}</div><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 font-bold text-white">{avatarLetter}</div></div></div><div className="relative max-w-md"><FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search workspace..." className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-11 pr-4 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" /></div></div></header>
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6"><Routes><Route index element={<DashboardOverview />} /><Route path="profile-analyzer" element={<ProfileAnalyzer />} /><Route path="gig-seo" element={<GigSEO />} /><Route path="proposal-generator" element={<ProposalGenerator />} /><Route path="ai-assistant" element={<AIChat />} /><Route path="history" element={<History />} /><Route path="profile" element={<Profile />} /><Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes><footer className="mt-12 border-t border-slate-200 pt-8 text-center text-sm text-slate-500"><p>Gigora AI Workspace</p><p className="mt-2">Built with React • Tailwind CSS • Supabase • Gemini AI</p></footer></main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6"><Routes><Route index element={<DashboardOverview />} /><Route path="profile-analyzer" element={<ProfileAnalyzer />} /><Route path="gig-seo" element={<GigSEO />} /><Route path="proposal-generator" element={<ProposalGenerator />} /><Route path="ai-assistant" element={<AIChat />} /><Route path="history" element={<History />} /><Route path="profile" element={<Profile />} /><Route path="settings" element={<Settings />} /><Route path="help" element={<Help />} /><Route path="about" element={<About />} /><Route path="*" element={<Navigate to="/dashboard" replace />} /></Routes><footer className="mt-12 border-t border-slate-200 pt-8 text-center text-sm text-slate-500"><p>Gigora AI Workspace</p><p className="mt-2">Built with React • Tailwind CSS • Supabase • Gemini AI</p></footer></main>
         </div>
       </div>
     </div>
