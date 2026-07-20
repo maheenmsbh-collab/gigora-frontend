@@ -4,8 +4,11 @@ import Spinner from "../components/Spinner";
 import { generateProposal } from "../lib/api";
 import { FiCopy, FiDownload } from "react-icons/fi";
 import { showSuccess, showError } from "../lib/toast";
+import { useAuth } from "../contexts/AuthContext";
+import { saveProposal } from "../lib/history";
 
 export default function ProposalGenerator() {
+  const { user } = useAuth();
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [skills, setSkills] = useState("");
@@ -36,6 +39,18 @@ export default function ProposalGenerator() {
     });
 
     setProposal(response);
+
+    // Keep generated work available from the user's History page.
+    if (user?.id) {
+      try {
+        await saveProposal(user.id, {
+          jobTitle: jobTitle.trim(),
+          proposal: response.proposal,
+        });
+      } catch {
+        showError("Proposal generated, but it could not be saved to history.");
+      }
+    }
 
     showSuccess("Proposal generated successfully!");
   } catch {

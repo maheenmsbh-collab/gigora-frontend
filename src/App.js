@@ -17,6 +17,8 @@ function App() {
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/dashboard/*" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/history" element={<Navigate to="/dashboard/history" replace />} />
+          <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

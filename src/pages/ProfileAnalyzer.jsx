@@ -3,11 +3,14 @@ import ResultCard from '../components/ResultCard';
 import Spinner from '../components/Spinner';
 import { analyzeProfile } from '../lib/api';
 import { showSuccess, showError } from "../lib/toast";
+import { useAuth } from "../contexts/AuthContext";
+import { saveProfileAnalysis } from "../lib/history";
 
 const experienceOptions = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const platformOptions = ['Fiverr', 'Upwork', 'Freelancer'];
 
 export default function ProfileAnalyzer() {
+  const { user } = useAuth();
   const [profileUrl, setProfileUrl] = useState('');
   const [skills, setSkills] = useState('');
   const [experience, setExperience] = useState('Intermediate');
@@ -36,6 +39,19 @@ const handleSubmit = async (event) => {
     });
 
     setResults(analysis);
+
+    // Save the full result for the user, while the history card shows a concise preview.
+    if (user?.id) {
+      try {
+        await saveProfileAnalysis(user.id, {
+          profileUrl,
+          overallScore: analysis.overallScore,
+          analysis,
+        });
+      } catch {
+        showError("Analysis completed, but it could not be saved to history.");
+      }
+    }
     showSuccess("Profile analyzed successfully!");
   } catch {
     showError(

@@ -6,8 +6,11 @@ import EmptyChat from "../components/EmptyChat";
 import TypingIndicator from "../components/TypingIndicator";
 import { generateGeminiResponse } from "../lib/gemini";
 import { showError, showInfo } from "../lib/toast";
+import { useAuth } from "../contexts/AuthContext";
+import { saveChatHistory } from "../lib/history";
 
 export default function AIChat() {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +42,13 @@ export default function AIChat() {
         ...currentMessages,
         { role: "assistant", text: responseText, createdAt: new Date() },
       ]);
+      if (user?.id) {
+        try {
+          await saveChatHistory(user.id, { prompt, response: responseText });
+        } catch {
+          showError("Response received, but it could not be saved to history.");
+        }
+      }
     } catch (error) {
       showError(
         error.message === "GEMINI_KEY_MISSING"
