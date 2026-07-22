@@ -23,10 +23,26 @@ create table if not exists public.chat_history (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.gig_seo_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  gig_title text not null,
+  seo_score integer,
+  optimized_title text not null,
+  keywords jsonb not null default '[]'::jsonb,
+  suggestions jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.gig_seo_history add column if not exists keywords jsonb not null default '[]'::jsonb;
+alter table public.gig_seo_history add column if not exists suggestions jsonb not null default '[]'::jsonb;
+
 alter table public.saved_proposals enable row level security;
 alter table public.profile_analyses enable row level security;
 alter table public.chat_history enable row level security;
+alter table public.gig_seo_history enable row level security;
 
 create policy "Users manage own proposals" on public.saved_proposals for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users manage own analyses" on public.profile_analyses for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users manage own chats" on public.chat_history for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Users manage own Gig SEO history" on public.gig_seo_history for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

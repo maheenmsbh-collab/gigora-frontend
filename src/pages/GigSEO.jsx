@@ -1,258 +1,95 @@
 import { useState } from "react";
-import ResultCard from "../components/ResultCard";
+import { FiCopy, FiRefreshCw, FiTag } from "react-icons/fi";
 import Spinner from "../components/Spinner";
-import { generateProposal } from "../lib/api";
-import { FiCopy, FiDownload } from "react-icons/fi";
-import { showSuccess, showError } from "../lib/toast";
+import { suggestGigSEO } from "../lib/api";
+import { showError, showSuccess } from "../lib/toast";
+import { useAuth } from "../contexts/AuthContext";
+import { saveGigSEO } from "../lib/history";
+import { getRemainingUses } from "../lib/usage";
 
-export default function ProposalGenerator() {
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [skills, setSkills] = useState("");
-  const [tone, setTone] = useState("Professional");
+const TITLE_LIMIT = 80;
 
-  const [status, setStatus] = useState("idle");
-  const [proposal, setProposal] = useState(null);
+function CopyAction({ label, value }) {
   const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+      showSuccess(`${label} copied.`);
+    } catch {
+      showError("Unable to copy.");
+    }
+  };
+  return <button type="button" onClick={copy} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-50"><FiCopy />{copied ? "Copied" : `Copy ${label}`}</button>;
+}
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+export default function GigSEO() {
+  const { user } = useAuth();
+  const [gigTitle, setGigTitle] = useState("");
+  const [gigDescription, setGigDescription] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [category, setCategory] = useState("Web Development");
+  const [status, setStatus] = useState("idle");
+  const [result, setResult] = useState(null);
 
-    setProposal(null);
-
-    if (!jobTitle.trim() || !jobDescription.trim()) {
-      showError("Please enter both a job title and description.");
+  const analyze = async (event) => {
+    event?.preventDefault();
+    if (!gigTitle.trim() || !gigDescription.trim()) {
+      showError("Please enter both the gig title and description.");
       return;
     }
-
+    if (gigTitle.length > TITLE_LIMIT) {
+      showError("Gig titles cannot exceed 80 characters.");
+      return;
+    }
+    if (getRemainingUses() === 0) {
+      showError("You have reached today's free limit.");
+      return;
+    }
     setStatus("loading");
-
     try {
-      const response = await generateProposal({
-        jobTitle,
-        jobDescription,
-        skills,
-        tone,
-      });
+      const response = await suggestGigSEO({ gigTitle, gigDescription, keywords, category });
+      setResult(response);
+      showSuccess("Gig SEO generated successfully.");
 
-      setProposal(response);
-      showSuccess("Proposal generated successfully!");
+      try {
+        if (user?.id) {
+          await saveGigSEO(user.id, {
+            gigTitle,
+            seoScore: response.seoScore,
+            optimizedTitle: response.optimizedTitle,
+            keywords: response.keywords,
+            suggestions: response.suggestions,
+          });
+          showSuccess("SEO analysis saved to History.");
+        }
+      } catch {
+        showError("Could not save the SEO analysis to History.");
+      }
     } catch {
-      showError("Unable to generate a proposal right now.");
+      showError("Unable to analyze your gig right now.");
     } finally {
       setStatus("idle");
     }
   };
 
-  async function copyProposal() {
-    if (!proposal) return;
-
-    try {
-      await navigator.clipboard.writeText(proposal.proposal);
-
-      setCopied(true);
-      showSuccess("Proposal copied to clipboard!");
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch {
-      showError("Unable to copy proposal.");
-    }
-  }
-
-  function downloadProposal() {
-    if (!proposal) return;
-
-    const blob = new Blob([proposal.proposal], {
-      type: "text/plain",
-    });
-
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "proposal.txt";
-
-    link.click();
-
-    URL.revokeObjectURL(url);
-
-    showSuccess("Proposal downloaded!");
-  }
-
-  const wordCount = proposal
-    ? proposal.proposal.trim().split(/\s+/).length
-    : 0;
-
-  return (
-    <div className="space-y-8">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-md">
-        <div className="mb-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-600">
-            Proposal Generator
-          </p>
-
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">
-            AI Proposal Writer
-          </h1>
-
-          <p className="mt-2 text-slate-600">
-            Generate professional freelance proposals in seconds.
-          </p>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6"
-        >
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Job Title
-              </label>
-
-              <input
-                value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
-                placeholder="Shopify Store Optimization"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              />
-
-              <p className="mt-1 text-xs text-slate-500">
-                {jobTitle.length}/80 characters
-              </p>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Skills
-              </label>
-
-              <input
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                placeholder="React, SEO, Shopify"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Tone
-            </label>
-
-            <select
-              value={tone}
-              onChange={(e) => setTone(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-            >
-              <option>Professional</option>
-              <option>Friendly</option>
-              <option>Confident</option>
-              <option>Formal</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Job Description
-            </label>
-
-            <textarea
-              rows={7}
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the client's project here..."
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-            />
-
-            <p className="mt-1 text-xs text-slate-500">
-              {jobDescription.length}/2000 characters
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={status === "loading"}
-            className="rounded-2xl bg-slate-900 px-7 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-70"
-          >
-            {status === "loading"
-              ? <Spinner label="Generating Proposal..." />
-              : "Generate Proposal"}
-          </button>
-        </form>
-      </section>
-            {status === "loading" && (
-        <section className="rounded-3xl border border-slate-200 bg-white p-10 shadow-md">
-          <div className="flex flex-col items-center justify-center gap-5">
-            <Spinner label="AI is writing your proposal..." />
-
-            <p className="text-sm text-slate-500">
-              This usually takes a few seconds.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {proposal && (
-        <ResultCard
-          title={proposal.title}
-          value={`${wordCount} words`}
-        >
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={copyProposal}
-              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-            >
-              <FiCopy />
-              {copied ? "Copied!" : "Copy Proposal"}
-            </button>
-
-            <button
-              type="button"
-              onClick={downloadProposal}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium transition hover:bg-slate-50"
-            >
-              <FiDownload />
-              Download TXT
-            </button>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-            {proposal.proposal.split("\n").map((line, index) => (
-              <p
-                key={index}
-                className="mb-4 whitespace-pre-wrap leading-7 text-slate-700"
-              >
-                {line}
-              </p>
-            ))}
-          </div>
-        </ResultCard>
-      )}
-
-      {!proposal && status === "idle" && (
-        <section className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <div className="mx-auto max-w-md">
-            <div className="mb-5 text-6xl">
-              ✍️
-            </div>
-
-            <h2 className="text-2xl font-semibold text-slate-800">
-              No Proposal Generated Yet
-            </h2>
-
-            <p className="mt-3 text-slate-500">
-              Fill in the project information above and let AI generate a
-              professional proposal for you.
-            </p>
-          </div>
-        </section>
-      )}
-    </div>
-  );
+  return <div className="mx-auto max-w-5xl space-y-6">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600">Gig SEO Optimizer</p>
+      <h1 className="mt-2 text-3xl font-bold text-slate-900">Optimize your gig</h1>
+      <form onSubmit={analyze} className="mt-7 space-y-5">
+        <div className="grid gap-5 md:grid-cols-2"><label className="text-sm font-medium">Gig Title<input value={gigTitle} onChange={(event) => setGigTitle(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigo-500" /></label><label className="text-sm font-medium">Category<select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"><option>Web Development</option><option>UI/UX</option><option>Graphic Design</option><option>Content Writing</option><option>SEO</option><option>Digital Marketing</option></select></label></div>
+        <p className={`-mt-3 text-right text-xs ${gigTitle.length > TITLE_LIMIT ? "font-semibold text-red-600" : "text-slate-500"}`}>{gigTitle.length}/{TITLE_LIMIT} characters</p>
+        <label className="block text-sm font-medium">Target Keywords<input value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder="React, frontend, website" className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3" /></label>
+        <label className="block text-sm font-medium">Gig Description<textarea rows={7} value={gigDescription} onChange={(event) => setGigDescription(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3" /></label>
+        <button disabled={status === "loading"} className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white disabled:opacity-60">{status === "loading" ? <Spinner label="Analyzing..." /> : "Analyze SEO"}</button>
+      </form>
+    </section>
+    {result && <section className="space-y-5">
+      <div className="grid gap-5 md:grid-cols-2"><article className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm text-slate-500">SEO Score</p><div className="mt-4 space-y-4">{[["Title", Math.min(100, 45 + Math.round(result.seoScore * 0.55)), "bg-indigo-500"], ["Tags", Math.min(100, result.keywords.length * 15), "bg-emerald-500"], ["Description", Math.min(100, 35 + Math.round(gigDescription.length / 20)), "bg-amber-500"]].map(([label, score, color]) => <div key={label}><div className="flex justify-between text-sm"><span>{label}</span><span>{score}%</span></div><div className="mt-1 h-3 overflow-hidden rounded-full bg-slate-200"><div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: `${score}%` }} /></div></div>)}</div></article><article className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm text-slate-500">Optimized Title</p><p className="mt-2 font-semibold text-slate-900">{result.optimizedTitle}</p><div className="mt-4"><CopyAction label="Title" value={result.optimizedTitle} /></div></article></div>
+      <article className="rounded-2xl border border-slate-200 bg-white p-6"><div className="flex items-center gap-2 font-semibold"><FiTag />Keyword validation</div><div className="mt-4 flex flex-wrap gap-2">{result.keywords.map((keyword) => { const isValid = keywords.toLowerCase().split(",").map((item) => item.trim()).includes(keyword.toLowerCase()); return <span key={keyword} className={`rounded-full px-3 py-1 text-sm font-medium ${isValid ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>{keyword}</span>; })}</div><div className="mt-4"><CopyAction label="Tags" value={result.keywords.join(", ")} /></div></article>
+      <article className="rounded-2xl border border-slate-200 bg-white p-6"><h2 className="font-semibold">SEO Suggestions</h2><ul className="mt-4 list-disc space-y-2 pl-5 text-slate-700">{result.suggestions.map((item) => <li key={item}>{item}</li>)}</ul><div className="mt-4 flex flex-wrap gap-3"><CopyAction label="Description" value={gigDescription} /><button type="button" onClick={analyze} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white"><FiRefreshCw />Regenerate SEO</button></div></article>
+    </section>}
+  </div>;
 }

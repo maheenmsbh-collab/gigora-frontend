@@ -47,6 +47,9 @@ export async function generateProposal({
   jobTitle,
   jobDescription,
   skills,
+  tone,
+  skillCategory,
+  platform,
 }) {
   await delay(2000);
   const userName = await getCurrentUserName();
@@ -54,11 +57,13 @@ export async function generateProposal({
   return {
     title: `Proposal for ${jobTitle}`,
 
+    keyPoints: [tone, skillCategory, platform, ...skills.split(",").map((skill) => skill.trim()).filter(Boolean).slice(0, 3)],
+
     proposal: `Hello,
 
 I reviewed your project carefully and would love to help.
 
-With experience in ${skills}, I can build exactly what you're looking for while maintaining high quality, clear communication, and timely delivery.
+With experience in ${skills}, I can build exactly what you're looking for while maintaining high quality, clear communication, and timely delivery. My approach will be ${tone.toLowerCase()} and tailored for ${platform}.
 
 Project Understanding:
 ${jobDescription}

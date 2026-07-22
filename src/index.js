@@ -4,9 +4,7 @@ import "./index.css";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import "./lib/testSignup";
+import { Toaster } from "react-hot-toast";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -15,15 +13,9 @@ root.render(
     <>
       <App />
 
-      <ToastContainer
+      <Toaster
         position="top-right"
-        autoClose={2500}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="colored"
+        toastOptions={{ duration: 2500 }}
       />
     </>
   </React.StrictMode>

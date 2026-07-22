@@ -5,6 +5,7 @@ import { analyzeProfile } from '../lib/api';
 import { showSuccess, showError } from "../lib/toast";
 import { useAuth } from "../contexts/AuthContext";
 import { saveProfileAnalysis } from "../lib/history";
+import { getRemainingUses, recordUse } from "../lib/usage";
 
 const experienceOptions = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 const platformOptions = ['Fiverr', 'Upwork', 'Freelancer'];
@@ -17,8 +18,6 @@ export default function ProfileAnalyzer() {
   const [platform, setPlatform] = useState('Fiverr');
   const [status, setStatus] = useState('idle');
   const [results, setResults] = useState(null);
-  // const [error, setError] = useState('');
-
 const handleSubmit = async (event) => {
   event.preventDefault();
 
@@ -27,6 +26,10 @@ const handleSubmit = async (event) => {
     return;
   }
 
+  if (getRemainingUses() === 0) {
+    showError("You have reached today's free limit.");
+    return;
+  }
   setStatus("loading");
   setResults(null);
 
@@ -39,6 +42,7 @@ const handleSubmit = async (event) => {
     });
 
     setResults(analysis);
+    recordUse();
 
     // Save the full result for the user, while the history card shows a concise preview.
     if (user?.id) {
